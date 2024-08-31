@@ -273,17 +273,59 @@ Flags.sort = async function (flagIds, sort) {
 	return flagIds;
 };
 
+// async function checkPostError(editable, reporter) {
+// 	if (!editable.flag && !meta.config['reputation:disabled'] && reporter.reputation < meta.config['min:rep:flag']) {
+// 		throw new Error(`[[error:not-enough-reputation-to-flag, ${meta.config['min:rep:flag']}]]`);
+// 	}
+// }
+
+// async function checkUserError(payload, reporter) {
+// 	if (parseInt(payload.id, 10) === parseInt(payload.uid, 10)) {
+// 		throw new Error('[[error:cant-flag-self]]');
+// 	}
+// 	const editable = await privileges.users.canEdit(payload.uid, payload.id);
+// 	if (!editable && !meta.config['reputation:disabled'] && reporter.reputation < meta.config['min:rep:flag']) {
+// 		throw new Error(`[[error:not-enough-reputation-to-flag, ${meta.config['min:rep:flag']}]]`);
+// 	}
+// }
+
+function checkSelfFlag(payload) {
+    if (parseInt(payload.id, 10) === parseInt(payload.uid, 10)) {
+        throw new Error('[[error:cant-flag-self]]');
+    }
+}
+
+async function checkReputation(reporter, config) {
+    if (!config['reputation:disabled'] && reporter.reputation < config['min:rep:flag']) {
+        throw new Error(`[[error:not-enough-reputation-to-flag, ${config['min:rep:flag']}]]`);
+    }
+}
+
+// function checkTargetAndReporterError(target, reporter) {
+// 	if (!target) {
+// 		throw new Error('[[error:invalid-data]]');
+// 	} else if (target.deleted) {
+// 		throw new Error('[[error:post-deleted]]');
+// 	} else if (!reporter || !reporter.userslug) {
+// 		throw new Error('[[error:no-user]]');
+// 	} else if (reporter.banned) {
+// 		throw new Error('[[error:user-banned]]');
+// 	}
+// }
+
+
 Flags.validate = async function (payload) {
 	const [target, reporter] = await Promise.all([
 		Flags.getTarget(payload.type, payload.id, payload.uid),
 		user.getUserData(payload.uid),
 	]);
 
+	// checkTargetAndReporterError(target, reporter);
 	if (!target) {
 		throw new Error('[[error:invalid-data]]');
 	} else if (target.deleted) {
 		throw new Error('[[error:post-deleted]]');
-	} else if (!reporter || !reporter.userslug) {
+	} else if (!reporter?.userslug) {
 		throw new Error('[[error:no-user]]');
 	} else if (reporter.banned) {
 		throw new Error('[[error:user-banned]]');
@@ -300,13 +342,15 @@ Flags.validate = async function (payload) {
 
 	if (payload.type === 'post') {
 		const editable = await privileges.posts.canEdit(payload.id, payload.uid);
+		// checkPostError(editable, reporter);
 		if (!editable.flag && !meta.config['reputation:disabled'] && reporter.reputation < meta.config['min:rep:flag']) {
 			throw new Error(`[[error:not-enough-reputation-to-flag, ${meta.config['min:rep:flag']}]]`);
 		}
 	} else if (payload.type === 'user') {
-		if (parseInt(payload.id, 10) === parseInt(payload.uid, 10)) {
-			throw new Error('[[error:cant-flag-self]]');
-		}
+		// if (parseInt(payload.id, 10) === parseInt(payload.uid, 10)) {
+		// 	throw new Error('[[error:cant-flag-self]]');
+		// }
+		checkSelfFlag(payload);
 		const editable = await privileges.users.canEdit(payload.uid, payload.id);
 		if (!editable && !meta.config['reputation:disabled'] && reporter.reputation < meta.config['min:rep:flag']) {
 			throw new Error(`[[error:not-enough-reputation-to-flag, ${meta.config['min:rep:flag']}]]`);

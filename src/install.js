@@ -47,51 +47,29 @@ questions.optional = [
 	},
 ];
 
-function getSetupValuesFromEnv(evName, setupVal, envConfMap, evValue) {
-	if (evName.startsWith('NODEBB_DB_')) {
-		setupVal[`${process.env.NODEBB_DB}:${envConfMap[evName]}`] = evValue;
-	} else if (evName.startsWith('NODEBB_')) {
-		setupVal[envConfMap[evName]] = evValue;
-	}
-}
-
-function setSetupValuesFromEnv(setupVal, envConfMap, envKeys) {
-	// Set setup values from env vars (if set)
-	if (Object.keys(envConfMap).some(key => envKeys.includes(key))) {
-		winston.info('[install/checkSetupFlagEnv] checking env vars for setup info...');
-		setupVal = setupVal || {};
-
-		Object.entries(process.env).forEach(([evName, evValue]) => { // get setup values from env
-			getSetupValuesFromEnv(evName, setupVal, envConfMap, evValue);
-		});
-
-		setupVal['admin:password:confirm'] = setupVal['admin:password'];
-	}
-	return setupVal;
-}
-
 function setErrorMessage(setupVal) {
-	const errorMessage = '[install/checkSetupFlagEnv] required values are missing for automated setup:';
-	if (!setupVal['admin:username']) {
-		winston.error(errorMessage, '  admin:username');
+	if (setupVal['admin:username'] && setupVal['admin:password'] && setupVal['admin:password:confirm'] && setupVal['admin:email']) {
+		install.values = setupVal;
+	} else {
+		winston.error('[install/checkSetupFlagEnv] required values are missing for automated setup:');
+		if (!setupVal['admin:username']) {
+			winston.error('  admin:username');
+		}
+		if (!setupVal['admin:password']) {
+			winston.error('  admin:password');
+		}
+		if (!setupVal['admin:password:confirm']) {
+			winston.error('  admin:password:confirm');
+		}
+		if (!setupVal['admin:email']) {
+			winston.error('  admin:email');
+		}
 		process.exit();
 	}
-	if (!setupVal['admin:password']) {
-		winston.error(errorMessage, '  admin:password');
-		process.exit();
-	}
-	if (!setupVal['admin:password:confirm']) {
-		winston.error(errorMessage, '  admin:password:confirm');
-		process.exit();
-	}
-	if (!setupVal['admin:email']) {
-		winston.error(errorMessage, '  admin:email');
-		process.exit();
-	}
-	install.values = setupVal;
 }
 
 function checkSetupFlagEnv() {
+	let setupVal = install.values;
 	const envConfMap = {
 		CONFIG: 'config',
 		NODEBB_CONFIG: 'config',
@@ -109,8 +87,21 @@ function checkSetupFlagEnv() {
 		NODEBB_DB_SSL: 'ssl',
 	};
 
+	// Set setup values from env vars (if set)
 	const envKeys = Object.keys(process.env);
-	let setupVal = setSetupValuesFromEnv(install.values, envConfMap, envKeys);
+	if (Object.keys(envConfMap).some(key => envKeys.includes(key))) {
+		winston.info('[install/checkSetupFlagEnv] checking env vars for setup info...');
+		setupVal = setupVal || {};
+
+		Object.entries(process.env).forEach(([evName, evValue]) => { // get setup values from env
+			if (evName.startsWith('NODEBB_DB_')) {
+				setupVal[`${process.env.NODEBB_DB}:${envConfMap[evName]}`] = evValue;
+			} else if (evName.startsWith('NODEBB_')) {
+				setupVal[envConfMap[evName]] = evValue;
+			}
+		});
+		setupVal['admin:password:confirm'] = setupVal['admin:password'];
+	}
 
 	// try to get setup values from json, if successful this overwrites all values set by env
 	// TODO: better behaviour would be to support overrides per value, i.e. in order of priority (generic pattern):

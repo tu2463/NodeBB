@@ -755,22 +755,6 @@ describe('Flags', () => {
 			});
 		});
 
-		// it('should not pass validation the user is banned', (done) => {
-		// 	User.bans.ban(1, 0, '', (err) => {
-		// 		assert.ifError(err);
-
-		// 		Flags.validate({
-		// 			type: 'user',
-		// 			id: 1,
-		// 			uid: 3,
-		// 		}, (err) => {
-		// 			assert.ok(err);
-		// 			assert.strictEqual('[[error:user-banned]]', err.message);
-		// 			User.bans.unban([1], '', done);
-		// 		});
-		// 	});
-		// });
-		
 		it('should not pass validation if type is user, flag threshold is set and user rep does not meet it', (done) => {
 			Meta.configs.set('min:rep:flag', '50', (err) => {
 				assert.ifError(err);

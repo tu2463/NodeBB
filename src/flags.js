@@ -274,6 +274,7 @@ Flags.sort = async function (flagIds, sort) {
 };
 
 function checkSelfFlagError(payload) {
+	console.log('CHEYU TU - checkSelfFlagError');
 	if (parseInt(payload.id, 10) === parseInt(payload.uid, 10)) {
 		throw new Error('[[error:cant-flag-self]]');
 	}
@@ -290,10 +291,12 @@ Flags.validate = async function (payload) {
 	} else if (target.deleted) {
 		throw new Error('[[error:post-deleted]]');
 	} else if (!reporter?.userslug) {
+		console.log('CHEYU TU - if !reporter?.userslug');
 		throw new Error('[[error:no-user]]');
 	} else if (reporter.banned) {
 		throw new Error('[[error:user-banned]]');
 	}
+	console.log('CHEYU TU - after checking if !reporter?.userslug');
 
 	// Disallow flagging of profiles/content of privileged users
 	const [targetPrivileged, reporterPrivileged] = await Promise.all([

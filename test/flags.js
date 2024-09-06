@@ -755,19 +755,22 @@ describe('Flags', () => {
 			});
 		});
 
+		function validateUserFlag(done) {
+			Flags.validate({
+				type: 'user',
+				id: 1,
+				uid: 3,
+			}, (err) => {
+				assert.ok(err);
+				assert.strictEqual('[[error:not-enough-reputation-to-flag, 50]]', err.message);
+				Meta.configs.set('min:rep:flag', 0, done);
+			});
+		}
+
 		it('should not pass validation if type is user, flag threshold is set and user rep does not meet it', (done) => {
 			Meta.configs.set('min:rep:flag', '50', (err) => {
 				assert.ifError(err);
-
-				Flags.validate({
-					type: 'user',
-					id: 1,
-					uid: 3,
-				}, (err) => {
-					assert.ok(err);
-					assert.strictEqual('[[error:not-enough-reputation-to-flag, 50]]', err.message);
-					Meta.configs.set('min:rep:flag', 0, done);
-				});
+				validateUserFlag(done);
 			});
 		});
 
